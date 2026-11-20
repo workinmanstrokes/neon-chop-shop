@@ -1,103 +1,85 @@
-extends Node
-## GameState autoload: player profile, run state, heat, and local save.
-## Persistent meta-progression (credits, tech, blueprints, cards, shop
-## upgrades) survives between runs; unbanked run loot does not.
+class_name GameState
+extends RefCounted
+## Persistent shop state. Banked credits + unlocked 3D-printer blueprints
+## SURVIVE raids. Unbanked credits and the active implant live in memory
+## only (see main.gd / raid.gd) and are wiped by a Raid.
+## Saved as JSON to user://neon_chop_shop_save.json
 
-const SAVE_PATH := "user://savegame.json"
-const MAX_HEAT := 100
-const RAID_HEAT_THRESHOLD := 80
+const SAVE_PATH := "user://neon_chop_shop_save.json"
 
-var credits: int = 250
-var stolen_tech: int = 0
-var heat: int = 0
-var reputation: int = 0
+const BLUEPRINTS := [
+	{ "id": "optics2",  "name": "Optics Mk II",         "cost": 200, "desc": "+25% surgery payout" },
+	{ "id": "neural2",  "name": "Neural Link Mk II",    "cost": 200, "desc": "Start ICE battles with +2 RAM" },
+	{ "id": "reflex2",  "name": "Reflex Booster Mk II", "cost": 200, "desc": "Surgery generates 20% less Heat" },
+	{ "id": "cloakfw",  "name": "Cloak Firmware",       "cost": 300, "desc": "Cloak cards cut Trace by 25 (was 15)" },
+	{ "id": "ocgov",    "name": "Overclock Governor",   "cost": 300, "desc": "Overclock Heat penalty halved" },
+	{ "id": "plaspool", "name": "PLA+ Spool",           "cost": 150, "desc": "Draw 5 cards per ICE turn (was 4)" },
+]
 
-# Current run (roguelite): lost on a full trace / raid, except banked loot.
-var run_loot_credits: int = 0
-var run_loot_tech: int = 0
-var trace_percent: float = 0.0
-var current_node: String = "hub"
-
-# Persistent meta-progression.
-var unlocked_blueprints: Array[String] = ["optic_chip_mk1"]
-var owned_cards: Array[String] = ["icebreaker_spike"]
-var shop_upgrades: Array[String] = []
-
-
-func _ready() -> void:
-	load_game()
+var banked: int = 0
+var blueprints: Dictionary = {}
+var jobs: int = 0
+var raids: int = 0
+var hacks: int = 0
+var best: int = 0
 
 
-func start_new_run() -> void:
-	run_loot_credits = 0
-	run_loot_tech = 0
-	trace_percent = 0.0
-	current_node = "hub"
+func has_blueprint(id: String) -> bool:
+	return blueprints.get(id, false)
 
 
-func bank_run_loot() -> void:
-	credits += run_loot_credits
-	stolen_tech += run_loot_tech
-	run_loot_credits = 0
-	run_loot_tech = 0
+func buy_blueprint(id: String) -> bool:
+	for bp in BLUEPRINTS:
+		if bp["id"] == id:
+			if has_blueprint(id):
+				return false
+			if banked < int(bp["cost"]):
+				return false
+			banked -= int(bp["cost"])
+			blueprints[id] = true
+			save()
+			return true
+	return false
 
 
-func lose_run_loot() -> void:
-	run_loot_credits = 0
-	run_loot_tech = 0
-	trace_percent = 0.0
+func bank_credits(amount: int) -> void:
+	banked += amount
+	best = maxi(best, banked)
+	save()
 
 
-func add_heat(amount: int) -> void:
-	heat = clampi(heat + amount, 0, MAX_HEAT)
-
-
-func is_raid_risk() -> bool:
-	return heat >= RAID_HEAT_THRESHOLD
-
-
-func apply_surgery_payout(payout: int, overclocked: bool) -> void:
-	credits += payout
-	reputation += 1
-	if overclocked:
-		add_heat(15)
-
-
-func save_game() -> void:
-	var data := {
-		"credits": credits,
-		"stolen_tech": stolen_tech,
-		"heat": heat,
-		"reputation": reputation,
-		"unlocked_blueprints": unlocked_blueprints,
-		"owned_cards": owned_cards,
-		"shop_upgrades": shop_upgrades,
+func to_dict() -> Dictionary:
+	return {
+		"banked": banked,
+		"blueprints": blueprints,
+		"jobs": jobs,
+		"raids": raids,
+		"hacks": hacks,
+		"best": best,
 	}
+
+
+func save() -> void:
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-	if file == null:
-		push_error("Neon Chop Shop: could not open save file for writing.")
-		return
-	file.store_string(JSON.stringify(data, "\t"))
-	file.close()
+	if file:
+		file.store_string(JSON.stringify(to_dict()))
+		file.close()
 
 
-func load_game() -> void:
+static func load() -> GameState:
+	var state := GameState.new()
 	if not FileAccess.file_exists(SAVE_PATH):
-		return
+		return state
 	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
-	if file == null:
-		push_error("Neon Chop Shop: could not open save file for reading.")
-		return
-	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	if not file:
+		return state
+	var data: Variant = JSON.parse_string(file.get_as_text())
 	file.close()
-	if typeof(parsed) != TYPE_DICTIONARY:
-		push_error("Neon Chop Shop: save file is corrupt, keeping defaults.")
-		return
-	var data: Dictionary = parsed
-	credits = int(data.get("credits", credits))
-	stolen_tech = int(data.get("stolen_tech", stolen_tech))
-	heat = int(data.get("heat", heat))
-	reputation = int(data.get("reputation", reputation))
-	unlocked_blueprints.assign(data.get("unlocked_blueprints", unlocked_blueprints))
-	owned_cards.assign(data.get("owned_cards", owned_cards))
-	shop_upgrades.assign(data.get("shop_upgrades", shop_upgrades))
+	if data is Dictionary:
+		state.banked = int(data.get("banked", 0))
+		state.blueprints = data.get("blueprints", {})
+		state.jobs = int(data.get("jobs", 0))
+		state.raids = int(data.get("raids", 0))
+		state.hacks = int(data.get("hacks", 0))
+		state.best = int(data.get("best", 0))
+	return state

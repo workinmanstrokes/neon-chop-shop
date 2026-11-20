@@ -1,105 +1,113 @@
-# Neon Chop Shop
+# Neon Chop Shop — Milestone 1-3 Vertical Slice
 
-**Install the chrome. Break the ICE. Don't get traced.**
-
-Neon Chop Shop is a mobile cyberpunk roguelite where you run a back-alley
-chop shop in a gritty, dystopian neon metropolis. Diagnose clients, install
-and overclock cyberware through drag-and-drop wiring and chip-alignment
-puzzles, then jack into cyberspace for card-based data heists against ICE
-before the trace meter fills.
-
-Credits and stolen tech fund new blueprints, 3D-printed chrome and better
-hacking software, while overclocking and failed heists raise heat and risk
-malfunctions and police raids.
-
-## What it is
-
-- **Cybernetic upgrade simulator** — back-alley cyber-surgeon: inspect
-  clients, read faulty system logs, install, rewire and overclock implants
-  (optical chips, neural links, military-grade chrome).
-- **Roguelite hackathon loop** — between surgeries, jack in for data-heist
-  "hackathons": a quick-turn digital card battler mixed with push-your-luck
-  hacking puzzles against firewall security AI (ICE).
-- **Chop Shop economy** — earn digital credit and stolen tech to expand the
-  shop, 3D-print illegal implants, and buy better hacking software.
-- **Heat and raids** — overclocking grants extreme bonuses but raises heat
-  and malfunction meters, risking permanent system failure or police raids.
-
-## Features
-
-- Client diagnosis: read symptoms and faulty system logs to pick the correct
-  implant and wiring fault before surgery.
-- Drag-and-drop surgery: place an implant in a body slot, drag wires to
-  matching circuit nodes, and align memory chips under a precision/timer
-  check.
-- Overclocking: boost implant power for extra payout and bonuses while
-  raising heat and malfunction chance.
-- Turn-based ICE card battles: play icebreaker cards and scripts against
-  firewall AI to break nodes and steal data.
-- Push-your-luck downloads: keep hacking for more loot as the trace meter
-  rises, or jack out before cyber-police trace you.
-- Roguelite heist map: pick branching heist nodes between surgeries; a full
-  trace ends the run and loses unbanked loot.
-- Chop Shop upgrades: spend credits and stolen tech on implant blueprints,
-  3D-printing, better cards and hacking software.
-- Heat and raid system: high heat from overclocking and failed hacks triggers
-  malfunctions, fines and police raids.
-- Persistent meta-progression and local save: keep unlocked blueprints, cards
-  and shop upgrades between runs.
-
-## Screens
-
-Title / Main Menu · Chop Shop Hub · Client Intake & Diagnosis ·
-Surgery Table · Surgery Results & Payment · Cyberspace Heist Map ·
-Hack Battle · Upgrade & 3D-Print Shop · Run End / Raid / Game Over
+A cyberpunk roguelite: **Phase 1** cyber-surgery table, **Phase 2** turn-based
+ICE card battler, with roguelite Raid stakes. Portrait **720x1280**, built
+for one-handed mobile play.
 
 ## How to run
 
-Requires **Godot 4** (4.x, GDScript, 2D).
+### Browser prototype (playable now)
+Open `index.html` in any modern browser, or serve it locally:
 
-1. Open this folder in Godot 4 (Import, or open `project.godot`).
-2. Press **F5** (or the Play button) to run the project. The main scene is
-   `main.tscn`.
-3. The starter build is a playable skeleton: from the Hub, open the Surgery
-   Table, drag the implant into the highlighted body slot, and get a
-   pass/fail result with payout. Credits, heat and save state live in the
-   `GameState` autoload (`scripts/game_state.gd`).
+```bash
+cd neon-chop-shop
+python3 -m http.server 8000
+# open http://localhost:8000/
+```
 
-### Exporting to Android / iOS
+Touch and mouse both work. Progress (banked credits + blueprints) saves to
+`localStorage` on the device.
 
-- **Android:** install the Godot Android export templates, enable the
-  Android export preset (one-click deploy to a device for testing, or build
-  an APK/AAB for sideloading/store).
-- **iOS:** export from Godot on macOS with the iOS export preset, then open
-  the generated Xcode project to sign and deploy.
-- The project uses a portrait mobile viewport (720 × 1280) with stretch
-  mode `canvas_items`, so one codebase serves both platforms.
+**Self-test:** open `index.html?selftest=1` — an automated suite plays a
+full job (diagnose, drag implant, wires, overclock, ICE battle, Jack Out),
+buys a blueprint, then triggers a Raid both ways (Heat and Trace) and
+verifies the blueprints survive. It prints PASS/FAIL lines on the page.
 
-## Build milestones
+### Godot 4 version
+Requires **Godot 4.x**. Open `project.godot` in the editor and run the
+`Main` scene. The GDScript mirrors the HTML version exactly — same screens,
+same numbers, same stakes — using `_draw()`-based rendering, so the project
+runs with no extra scene setup. Mouse works on desktop;
+`emulate_touch_from_mouse` is enabled in `project.godot` for testing touch.
 
-1. Playable skeleton in Godot: hub, one client, drag one implant into a
-   slot, pass/fail and payout.
-2. Full surgery loop: diagnosis from logs, wire-connecting and chip-alignment
-   puzzles, scoring and malfunction.
-3. Hack battler: hand of icebreaker cards vs one ICE type, trace meter,
-   download and jack-out.
-4. Roguelite loop: branching heist map, run rewards, trace-out ends run and
-   loses unbanked loot.
-5. Chop Shop economy: shop, blueprints and 3D-printing, card/software
-   upgrades, overclock and heat/raid consequences.
-6. Content and balance pass: multiple clients, implants, cards, ICE types
-   and heist nodes with tuned difficulty.
-7. Polish and ship: neon glitch UI, diagnostic animations, synth music/SFX,
-   local save, Android/iOS export and device testing.
+## Layout
 
-## Tech
+```
+index.html                  Playable HTML5 canvas prototype (self-contained)
+project.godot               Godot 4 project (portrait 720x1280)
+main.tscn                   Main scene (Node2D + scripts/main.gd)
+scripts/
+  game_state.gd             Persistent save: banked credits + blueprints
+  surgery.gd                Phase 1: diagnose / implant / wires / Heat
+  ice_battler.gd            Phase 2: deck, RAM, Trace, ICE nodes
+  raid.gd                   Raid resolution (wipes unbanked + implant only)
+  main.gd                   State machine + input + _draw rendering
+README.md                   This file
+```
 
-- **Engine:** Godot 4 (GDScript, 2D) — one codebase exports to Android and
-  iOS and natively handles touch drag-and-drop, cards, particles, glitch
-  shaders and audio.
-- **Save:** local JSON save via `user://savegame.json` (no account, no
-  server).
+## The game
 
-## License
+**Title screen** — New Job, Workbench (3D printer), How to Play. Shows banked
+credits, jobs done, raids survived, blueprints owned.
 
-All original code and assets in this repository are the author's own work.
+**Phase 1 — Cyber-Surgery Table**
+- Tap **DIAGNOSE**: the log names the faulty slot — Optics, Neural Link,
+  or Reflex Booster.
+- **Drag** the matching implant chip from the tray onto that slot. Wrong
+  slot = rejection + 12 Heat.
+- **Drag** each color-coded wire (red / blue / green) to its matching node.
+  A missed drop costs 6 Heat.
+- **OVERCLOCK** toggle: +50% payout, but all Heat gains x1.25 (x1.125 with
+  the Overclock Governor blueprint).
+- Tap **COMPLETE SURGERY** once the implant is seated and all 3 circuits
+  are connected. **Heat 100% = failed surgery = Raid.**
+
+**Phase 2 — ICE Card Battler**
+- Turn-based. Draw **4 cards per turn** (5 with the PLA+ Spool blueprint),
+  **RAM +3 per turn** (max 10).
+- Cards: **Spike** (2 RAM, 3 dmg), **Spoof** (1 RAM, 2 dmg, Trace -5),
+  **Cloak** (2 RAM, Trace -15), **Overcharge** (3 RAM, 6 dmg, Trace +10).
+- Tap a card to select it, tap a live ICE node to attack. Cloak needs no
+  target — tap it again to run it.
+- 3 firewall nodes: SENTRY-7 (8 HP), BLACK ICE (10 HP), GATEKEEPER (12 HP).
+  Each destroyed node steals 100cr; destroying all three pays a 250cr bonus.
+- **Trace Meter**: +5 per turn, +3 per live node, +10 per Overcharge.
+  **Trace 100% = Raid.**
+- **JACK OUT** any time to bank what you stole so far and end the job.
+
+**Raid stakes** — a failed surgery or 100% Trace triggers a police Raid:
+unbanked credits and the active implant are wiped. **Banked credits and
+unlocked 3D-printer blueprints always survive.**
+
+**Workbench (3D printer)** — spend banked credits on persistent blueprints:
+Optics Mk II (+25% surgery payout, 200cr), Neural Link Mk II (+2 starting
+RAM, 200cr), Reflex Booster Mk II (20% less Heat, 200cr), Cloak Firmware
+(Cloak cuts 25 Trace, 300cr), Overclock Governor (Overclock Heat penalty
+halved, 300cr), PLA+ Spool (draw 5 cards/turn, 150cr).
+
+## What was tested
+
+- `node --check` on the extracted inline JS: clean.
+- Headless self-test (`index.html?selftest=1`, 36 assertions, run under a
+  Node DOM/canvas stub harness): **36 passed, 0 failed.** It exercises a
+  real pointer drag to seat the implant, wrong-slot/wrong-wire rejections,
+  Overclock payout math, card play + RAM + Trace, end-turn redraw, hack
+  completion, Jack Out banking, blueprint purchase + persistence, and both
+  Raid triggers (Heat 100 and Trace 100) with blueprint survival verified
+  against localStorage.
+- Every screen (title, workbench, surgery, ICE, raid, job done, how-to)
+  rendered without throwing.
+- Godot scripts: delimiter/indentation sanity-checked, but **not executed
+  in the Godot editor** (no Godot binary in this environment) — open the
+  project in Godot 4.x and run the Main scene to confirm.
+
+## Known limits
+
+- The HTML prototype is the fully playable version; the Godot port mirrors
+  its systems and screens but its in-editor run is unverified here (see above).
+- The Godot renderer draws square panels (rounded corners are stubbed in
+  `_rr()`), and the surgery log lines are sized to fit without clipping.
+- The browser prototype has no sound and no art assets — all visuals are
+  procedural canvas drawing.
+- Balance is a first pass: Heat and Trace pressure were tuned so a careless
+  run fails in ~5-6 turns and a careful one wins in ~3-4.
